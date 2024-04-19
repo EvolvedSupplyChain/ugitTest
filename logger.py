@@ -158,6 +158,7 @@ else:
 
 #Instantiate MQTT client and define callbacks:
 def sub_cb(topic, msg):
+  global config
   print((topic, msg))
   if topic.decode() == ccTopic:
     decodedMsg = json.loads(msg.decode())
@@ -174,10 +175,30 @@ def sub_cb(topic, msg):
         client.publish(ccTopic, json.dumps(config).encode())
     elif subject == "changeSettings":
         #change device settings
+        with open("configBak.json",'w') as f:
+            json.dump(config,f)
+            
+        config = decodedMsg
+        with open("config.json",'w') as f:
+            json.dump(config,f)
         
         #TODO: if sent parameter(s) in config/config.json, validate value and save
         print("settings change requested")
         pass
+    elif sunject == "revertSettings":
+        try:
+            if "configBak.json" in os.listdir():
+                os.remove("config.json")
+                with open("configBak.json",'r') as f:
+                    config = json.load(f)
+                    
+                with open("config.json",'w') as f:
+                    json.dump(config,f)
+            else:
+                print("no backup config found")
+        except Exception as error:
+            print(error)
+        
     elif subject == "checkForUpdate":
         try:
             print("call the updater")
